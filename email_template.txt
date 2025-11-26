@@ -1,0 +1,23 @@
+Dear Hiring Manager,
+
+I’m writing to apply for the Python/Django + React Developer role. I build reliable, production-ready web applications and enjoy solving backend performance and integration challenges.
+
+With a solid background in full-stack development and hands-on experience in Python, Django, React, REST APIs, and scalable backend systems, I am confident in my ability to contribute effectively to your team.
+
+In my previous roles, I have developed, optimized, and deployed production-level applications using Django REST Framework, React JS, PostgreSQL, and third-party integrations.
+
+Some highlights of my experience:
+
+• Strong expertise in Python, Django, React JS, JavaScript, HTML/CSS  
+• Experience building RESTful APIs & integrating external services  
+• Hands-on skills in PostgreSQL, MySQL, SQLite  
+• Familiar with Git, GitHub & collaborative development workflows  
+• Proven track record of delivering clean, maintainable, production-ready code  
+I’m eager to bring pragmatic engineering and clean code practices to your team. I’d welcome the chance to discuss how my experience fits your needs.
+
+Thank you for considering my application. I look forward to the opportunity to discuss how my experience aligns with your team’s needs.
+
+Sincerely,  
+Muhammed Fazal C  
+muhammedfazalcholayil@gmail.com  
++91 96332 44022
