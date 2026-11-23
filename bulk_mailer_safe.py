@@ -36,7 +36,7 @@ SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 APP_PASSWORD = os.getenv("APP_PASSWORD")
 
 # ---------------- CONFIG ----------------
-CSV_FILE = "IT Hiring HR Contacts - HR Contacts.csv"   # downloaded from the Google Sheet
+CSV_FILE = "Gulf IT Hiring Contacts - Gulf HR Contacts.csv"   # downloaded from the Google Sheet
 TEMPLATE_FILE = "email_template.txt"
 ATTACH_PATH = "resume.pdf"
 LOG_FILE = "send_log.csv"
