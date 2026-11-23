@@ -27,7 +27,7 @@ SEND_RATE_PER_MIN = 10               # safe default (e.g. 10 emails per minute)
 PREVIEW_MODE = False
 TEST_EMAIL = ""           # empty string
 LOG_FILE = "send_log.csv"
-SUBJECT = "Application — Python / Django + React Developer"
+SUBJECT = "Senior Python / Django Developer – Muhammed Fasal C – Resume Attached"
 
 
 # add these imports at the top of the file (if not already present)

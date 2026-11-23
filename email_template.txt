@@ -1,15 +1,22 @@
-Dear Hiring Manager,
+Dear Hiring Team,
 
-I’m Muhammed Fasal, a Senior Software Engineer with 4+ years of experience building scalable, production-ready applications using Python, Django, DRF, React, PostgreSQL, AWS, Docker, Redis, Celery, and real-time technologies.
+I'm Muhammed Fasal, a Senior Software Engineer with 4+ years of experience building production backends in Python and Django, with React on the frontend. I'm writing to ask whether you have an opening for a Python / Django or full-stack role. My resume is attached.
 
-I currently work on a healthcare RCM platform with 40+ modules and 600+ APIs, processing 100K+ claims daily. My experience includes backend architecture, API and database optimization, real-time systems, AWS infrastructure, CI/CD, security, and third-party integrations. I have also worked on AI, e-commerce, travel, booking, payment, and communication platforms, with measurable improvements including ~85% query reduction, 45% lower API latency, and 70% faster deployments.
+A few highlights:
 
-I’m passionate about solving complex engineering problems, writing clean and maintainable code, and building reliable systems that scale.
+• Healthcare RCM platform (Xtract): led backend work on a HIPAA-conscious system with 600+ REST endpoints that processes 100K+ claims a day using Celery and Elasticsearch. Cut database queries by ~85% by removing N+1 queries and adding keyset pagination.
 
-Thank you for considering my application. I look forward to discussing how I can contribute to your team.
+• AI voice/chat platform (Nuronics Labs): built real-time features with Django Channels, WebSockets and Redis, and reduced API latency by 45%.
 
+• Travel booking platform (freelance): built with React and Django for 10,000+ concurrent users, and set up CI/CD with GitHub Actions and Docker that cut deployment time by 70%.
 
-Sincerely,
+I also work daily with AWS (EC2, S3, RDS, SQS), PostgreSQL, Docker, and payment integrations such as Stripe and Razorpay.
+
+I'd welcome a short call to discuss how I could contribute to your team. Thank you for your time.
+
+Best regards,
 Muhammed Fasal C
-+91 9633244022
-
+Senior Software Engineer | Python / Django
++91 96332 44022
+linkedin.com/in/muhammedfazal1122
+github.com/muhammedfazal1122
