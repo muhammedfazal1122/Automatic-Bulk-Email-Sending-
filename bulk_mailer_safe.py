@@ -36,8 +36,9 @@ SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 APP_PASSWORD = os.getenv("APP_PASSWORD")
 
 # ---------------- CONFIG ----------------
-CSV_FILE = "Gulf IT Hiring Contacts - Gulf HR Contacts.csv"   # downloaded from the Google Sheet
+CSV_FILE = "Job Hunt Tracker - Jobs new.csv"   # downloaded from the Google Sheet (Jobs tab)
 TEMPLATE_FILE = "email_template.txt"
+TEMPLATE = ""   # loaded in main()
 ATTACH_PATH = "resume.pdf"
 LOG_FILE = "send_log.csv"
 SENDER_NAME = "Muhammed Fasal C"
@@ -45,13 +46,17 @@ SUBJECT = "Senior Python / Django Developer – Muhammed Fasal C – Resume Atta
 SEND_RATE_PER_MIN = 10        # 6 s between emails; keeps Gmail happy
 MAX_RETRIES = 2               # per email, after a dropped connection
 
-# Column names in the sheet (matched case-insensitively; only Email is required)
-EMAIL_COL = "Email"
-COMPANY_COL = "Company / hiring firm"
-NAME_COL = "HR / recruiter name"
+# Column names in the sheet (matched case-insensitively; only the email column is required).
+# Each name may be a list: the first one found in the CSV wins, so the older HR-contact
+# sheets (Email / Company / hiring firm / HR / recruiter name) still work.
+EMAIL_COLS = ["HR Email", "Email"]
+COMPANY_COLS = ["Company", "Company / hiring firm"]
+NAME_COLS = ["HR / recruiter name"]
+ROLE_COLS = ["Title"]
 
 LOG_FIELDS = ["email", "company", "hr_name", "status", "error", "timestamp"]
 EMAIL_RE = re.compile(r"^[\w.+-]+@[\w-]+(\.[\w-]+)+$")
+FIND_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 
 
 # ---------------- helpers ----------------
@@ -59,7 +64,7 @@ def now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-PLACEHOLDER_RE = re.compile(r"^(not named|not stated|n/?a|none|unknown|-+)\b", re.I)
+PLACEHOLDER_RE = re.compile(r"^(not named|not stated|not found|n/?a|none|unknown|-+)\b", re.I)
 
 
 def clean_company(raw):
@@ -71,40 +76,70 @@ def clean_company(raw):
 
 
 def find_col(df, wanted):
-    for c in df.columns:
-        if c.strip().lower() == wanted.lower():
-            return c
+    """First column whose name matches `wanted` (a name or a list of names), else None."""
+    for w in ([wanted] if isinstance(wanted, str) else wanted):
+        for c in df.columns:
+            if c.strip().lower() == w.lower():
+                return c
     return None
 
 
 def load_contacts(path):
-    """Return a list of dicts {email, company, hr_name}, cleaned and de-duplicated."""
+    """Return a list of dicts {email, company, hr_name, role}, cleaned and de-duplicated.
+    A cell may hold several addresses; cells like 'Not found' or blank are skipped.
+    If one address appears on several rows (different companies/roles) the contact is
+    kept once with company and role blanked, so the letter stays generic and correct."""
     df = pd.read_csv(path, encoding="utf-8-sig", dtype=str).fillna("")
-    email_col = find_col(df, EMAIL_COL) or find_col(df, "email")
+    email_col = find_col(df, EMAIL_COLS)
     if not email_col:
-        sys.exit(f"ERROR: no '{EMAIL_COL}' column in {path}. Columns are: {list(df.columns)}")
-    company_col = find_col(df, COMPANY_COL)
-    name_col = find_col(df, NAME_COL)
+        sys.exit(f"ERROR: no {EMAIL_COLS} column in {path}. Columns are: {list(df.columns)}")
+    company_col = find_col(df, COMPANY_COLS)
+    name_col = find_col(df, NAME_COLS)
+    role_col = find_col(df, ROLE_COLS)
 
-    contacts, seen, invalid = [], set(), []
+    by_email, invalid = {}, []
     for _, row in df.iterrows():
-        email = row[email_col].strip().lower()
-        if not email:
+        cell = row[email_col].strip()
+        found = [e.lower() for e in FIND_EMAIL_RE.findall(cell)]
+        if not found:
+            if cell and not PLACEHOLDER_RE.match(cell):
+                invalid.append(cell)
             continue
-        if not EMAIL_RE.match(email):
-            invalid.append(email)
-            continue
-        if email in seen:
-            continue
-        seen.add(email)
-        contacts.append({
-            "email": email,
-            "company": clean_company(row[company_col]) if company_col else "",
-            "hr_name": row[name_col].strip() if name_col else "",
-        })
+        for email in found:
+            if not EMAIL_RE.match(email):
+                invalid.append(email)
+                continue
+            c = {
+                "email": email,
+                "company": clean_company(row[company_col]) if company_col else "",
+                "hr_name": row[name_col].strip() if name_col else "",
+                "role": row[role_col].strip() if role_col else "",
+            }
+            if email not in by_email:
+                by_email[email] = c
+            elif (by_email[email]["company"], by_email[email]["role"]) != (c["company"], c["role"]):
+                by_email[email].update(company="", role="")   # ambiguous -> generic letter
     for e in invalid:
         print(f"  ! skipping invalid address: {e}")
-    return contacts
+    return list(by_email.values())
+
+
+def render(contact):
+    """Return (subject, body) for one contact, filling the {greeting} and {opening} slots."""
+    company, role = contact.get("company", ""), contact.get("role", "")
+    if company:
+        greeting = f"Dear {company} Hiring Team,"
+    else:
+        greeting = "Dear Hiring Team,"
+    if role and company:
+        opening = f"I'm writing to apply for the {role} position at {company}."
+    elif role:
+        opening = f"I'm writing to apply for the {role} position."
+    else:
+        opening = "I'm writing to ask whether you have an opening for a Python / Django or full-stack role."
+    subject = f"Application: {role} – {SENDER_NAME}" if role else SUBJECT
+    body = TEMPLATE.replace("{greeting}", greeting).replace("{opening}", opening)
+    return subject, body
 
 
 def read_log_rows(path):
@@ -174,11 +209,11 @@ class Log:
         self.f.close()
 
 
-def build_message(to_email, body, attachment):
+def build_message(to_email, subject, body, attachment):
     msg = MIMEMultipart()
     msg["From"] = formataddr((SENDER_NAME, SENDER_EMAIL))
     msg["To"] = to_email
-    msg["Subject"] = SUBJECT
+    msg["Subject"] = subject
     msg.attach(MIMEText(body, "plain", "utf-8"))
     if attachment:
         part = MIMEBase("application", "pdf")
@@ -226,8 +261,9 @@ def main():
 
     if not os.path.exists(TEMPLATE_FILE):
         sys.exit(f"ERROR: template {TEMPLATE_FILE} not found")
+    global TEMPLATE
     with open(TEMPLATE_FILE, encoding="utf-8") as f:
-        body = f.read()
+        TEMPLATE = f.read()
 
     attachment = None
     if os.path.exists(ATTACH_PATH):
@@ -244,7 +280,8 @@ def main():
         to = args.test.strip().lower()
         print(f">>> TEST: sending one email to {to}")
         smtp = connect()
-        send_with_retry(smtp, build_message(to, body, attachment), to)
+        subject, body = render({})
+        send_with_retry(smtp, build_message(to, subject, body, attachment), to)
         smtp.quit()
         print("Sent. Check that inbox (test sends are not written to the log).")
         return
@@ -262,11 +299,13 @@ def main():
 
     # ---- preview ----
     if not args.send:
-        print(f"\nSubject: {SUBJECT}\nAttachment: {ATTACH_PATH if attachment else 'MISSING!'}\n")
-        print(body)
+        print(f"\nAttachment: {ATTACH_PATH if attachment else 'MISSING!'}\n")
+        if pending:
+            subj, body = render(pending[0])
+            print(f"--- sample letter (first recipient: {pending[0]['email']}) ---\nSubject: {subj}\n\n{body}")
         print("------ recipients ------")
         for i, c in enumerate(pending, 1):
-            print(f"{i:4}. {c['email']:45} {c['company']}")
+            print(f"{i:4}. {c['email']:42} {c['company']:28} {c['role']}")
         mins = len(pending) * delay / 60
         print(f"\nPREVIEW ONLY — nothing was sent. "
               f"To send these {len(pending)} emails (~{mins:.0f} min), run:\n"
@@ -284,7 +323,8 @@ def main():
     try:
         for i, c in enumerate(pending, 1):
             try:
-                smtp = send_with_retry(smtp, build_message(c["email"], body, attachment), c["email"])
+                subject, body = render(c)
+                smtp = send_with_retry(smtp, build_message(c["email"], subject, body, attachment), c["email"])
                 log.write(c, "sent")
                 sent += 1
                 print(f"[{i}/{len(pending)}] Sent → {c['email']}  ({c['company']})")

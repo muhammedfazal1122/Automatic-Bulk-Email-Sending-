@@ -1,6 +1,6 @@
-Dear Hiring Team,
+{greeting}
 
-I'm Muhammed Fasal, a Senior Software Engineer with 4+ years of experience building production backends in Python and Django, with React on the frontend. I'm writing to ask whether you have an opening for a Python / Django or full-stack role. My resume is attached.
+{opening} I'm Muhammed Fasal, a Senior Software Engineer with 4+ years of experience building production backends in Python and Django, with React on the frontend. My resume is attached.
 
 A few highlights:
 
